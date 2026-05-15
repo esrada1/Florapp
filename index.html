@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Flōra — Find Your Flower</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream: #faf6f0;
+    --petal: #f5e6d8;
+    --rose: #c9796a;
+    --rose-light: #e8a89a;
+    --sage: #7a8c6e;
+    --sage-light: #b5c4a8;
+    --bark: #4a3728;
+    --bark-light: #8a6f5e;
+    --ink: #2c2018;
+    --white: #fffcf8;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Decorative background blobs */
+  .bg-blobs {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.18;
+  }
+  .blob-1 { width: 400px; height: 400px; background: #f5d6cb; top: -100px; left: -100px; }
+  .blob-2 { width: 300px; height: 300px; background: #d4e8d0; top: 40%; right: -80px; }
+  .blob-3 { width: 250px; height: 250px; background: #f5d6cb; bottom: -60px; left: 30%; }
+
+  nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 48px;
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--bark);
+    letter-spacing: 0.04em;
+  }
+  .logo span { font-style: italic; color: var(--rose); }
+  .nav-tagline {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--bark-light);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .hero {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+    padding: 40px 24px 16px;
+  }
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--sage);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(38px, 6vw, 70px);
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--bark);
+    margin-bottom: 16px;
+  }
+  .hero h1 em { font-style: italic; color: var(--rose); }
+  .hero-sub {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--bark-light);
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  .floral-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 28px auto 28px;
+    max-width: 200px;
+  }
+  .divider-line { flex: 1; height: 1px; background: rgba(201,121,106,0.2); }
+  .divider-bloom { font-size: 18px; color: var(--rose); opacity: 0.7; }
+
+  /* ── CHAT AREA ── */
+  .chat-container {
+    position: relative;
+    z-index: 5;
+    max-width: 640px;
+    margin: 0 auto 60px;
+    padding: 0 20px;
+  }
+
+  .chat-window {
+    background: var(--white);
+    border: 1px solid rgba(201,121,106,0.15);
+    border-radius: 24px;
+    padding: 28px 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 340px;
+    box-shadow: 0 4px 40px rgba(74,55,40,0.07);
+  }
+
+  .msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    animation: fadeUp 0.3s ease forwards;
+  }
+  .msg.bot { flex-direction: row; }
+  .msg.user { flex-direction: row-reverse; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 14px;
+    background: var(--petal);
+    color: var(--rose);
+    border: 1px solid rgba(201,121,106,0.2);
+  }
+
+  .bubble {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.65;
+    font-weight: 300;
+  }
+  .msg.bot .bubble {
+    background: var(--cream);
+    color: var(--ink);
+    border-bottom-left-radius: 5px;
+    border: 1px solid rgba(201,121,106,0.12);
+  }
+  .msg.user .bubble {
+    background: var(--rose);
+    color: #fff;
+    border-bottom-right-radius: 5px;
+  }
+
+  /* Options */
+  .options-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-left: 44px;
+    animation: fadeUp 0.35s ease 0.1s both;
+  }
+  .opt-btn {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(201,121,106,0.35);
+    background: transparent;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--rose);
+    transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.12s;
+  }
+  .opt-btn:hover {
+    background: var(--rose);
+    color: #fff;
+    border-color: var(--rose);
+    transform: translateY(-1px);
+  }
+  .opt-btn:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+  /* Typing indicator */
+  .typing-wrap { display: flex; gap: 10px; align-items: flex-end; }
+  .typing-bubble {
+    background: var(--cream);
+    border: 1px solid rgba(201,121,106,0.12);
+    border-radius: 18px;
+    border-bottom-left-radius: 5px;
+    padding: 14px 18px;
+    display: flex; gap: 5px; align-items: center;
+  }
+  .typing-bubble span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--rose-light);
+    animation: blink 1.2s infinite;
+  }
+  .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.25} 40%{opacity:1} }
+
+  /* Result card */
+  .result-card {
+    background: var(--white);
+    border: 1px solid rgba(122,140,110,0.2);
+    border-radius: 16px;
+    overflow: hidden;
+    width: 100%;
+  }
+  .rc-header {
+    background: linear-gradient(135deg, #e8f0e2 0%, #d4e8cf 100%);
+    padding: 20px;
+    display: flex; gap: 14px; align-items: center;
+    border-bottom: 1px solid rgba(122,140,110,0.15);
+  }
+  .rc-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(122,140,110,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; flex-shrink: 0;
+  }
+  .rc-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; color: var(--bark);
+  }
+  .rc-latin {
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-size: 12px; color: var(--bark-light);
+    margin-top: 2px;
+  }
+  .rc-body { padding: 18px 20px; }
+  .rc-desc {
+    font-size: 13px; font-weight: 300; color: var(--bark);
+    line-height: 1.75; margin-bottom: 16px;
+  }
+  .rc-traits {
+    display: grid; grid-template-columns: repeat(3,1fr);
+    gap: 8px; margin-bottom: 16px;
+  }
+  .trait {
+    background: var(--cream);
+    border-radius: 10px; padding: 10px 10px;
+    border: 1px solid rgba(201,121,106,0.1);
+  }
+  .trait-l {
+    font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--rose); margin-bottom: 3px;
+  }
+  .trait-v { font-size: 12px; font-weight: 300; color: var(--bark); }
+
+  .tips-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px; color: var(--bark);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .tips-title::after {
+    content: ''; flex: 1; height: 1px;
+    background: rgba(201,121,106,0.15);
+  }
+  .tip {
+    display: flex; gap: 10px; align-items: flex-start;
+    font-size: 13px; font-weight: 300;
+    color: var(--bark-light); line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  .tip-icon {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: rgba(122,140,110,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+  }
+
+  .restart-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(201,121,106,0.25);
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 300;
+    color: var(--bark-light);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .restart-btn:hover { border-color: var(--rose); color: var(--rose); background: rgba(201,121,106,0.04); }
+
+  footer {
+    position: relative; z-index: 5;
+    text-align: center; padding: 0 24px 48px;
+    font-size: 12px; font-weight: 300;
+    color: var(--bark-light); opacity: 0.45;
+    letter-spacing: 0.06em;
+  }
+
+  @media (max-width: 500px) {
+    nav { padding: 20px 24px; }
+    .hero h1 { font-size: 36px; }
+    .rc-traits { grid-template-columns: repeat(2,1fr); }
+    .bubble { max-width: 90%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<nav>
+  <div class="logo">fl<span>ō</span>ra</div>
+  <div class="nav-tagline">find your flower</div>
+</nav>
+
+<section class="hero">
+  <div class="hero-eyebrow">❀ bloom by bloom ❀</div>
+  <h1>Tell us about<br>your <em>space</em></h1>
+  <p class="hero-sub">Answer a few quick questions and we'll find the perfect flower — one that truly thrives where you are.</p>
+</section>
+
+<div class="floral-divider">
+  <div class="divider-line"></div>
+  <span class="divider-bloom">❀</span>
+  <div class="divider-line"></div>
+</div>
+
+<div class="chat-container">
+  <div class="chat-window" id="chatWindow"></div>
+</div>
+
+<footer>flōra · every space deserves a bloom</footer>
+
+<script>
+/* ── CONVERSATION STEPS ── */
+const STEPS = [
+  {
+    key: "loc",
+    q: "Hello! I'm flōra 🌸 — I'll help you find your perfect flower. First: where will it live?",
+    opts: [{ label: "🏠 Indoors", val: "indoor" }, { label: "🌿 Outdoors", val: "outdoor" }]
+  },
+  {
+    key: "light",
+    q: "How much natural light does that spot get?",
+    opts: [
+      { label: "☀️ Full sun", val: "full" },
+      { label: "⛅ Bright indirect", val: "bright" },
+      { label: "🌥 Partial shade", val: "partial" },
+      { label: "🕯 Low light", val: "low" }
+    ]
+  },
+  {
+    key: "climate",
+    q: "How would you describe the conditions there?",
+    opts: [
+      { label: "🌊 Humid", val: "humid" },
+      { label: "💨 Dry", val: "dry" },
+      { label: "🍂 Temperate", val: "temperate" },
+      { label: "❄️ Cold", val: "cold" }
+    ]
+  },
+  {
+    key: "care",
+    q: "Last one — how much time can you give to watering and care?",
+    opts: [
+      { label: "🌱 Minimal — I often forget", val: "minimal" },
+      { label: "⏱ Moderate — weekly check", val: "moderate" },
+      { label: "💧 Frequent — I love fussing", val: "frequent" }
+    ]
+  }
+];
+
+/* ── STATE ── */
+let state = {};
+let step = 0;
+const win = document.getElementById('chatWindow');
+
+/* ── HELPERS ── */
+function scrollDown() {
+  setTimeout(() => win.scrollTop = win.scrollHeight, 50);
+}
+
+function disableAllOptions() {
+  win.querySelectorAll('.opt-btn').forEach(b => { b.disabled = true; });
+}
+
+function addBotMsg(html) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg bot';
+  wrap.innerHTML = `<div class="avatar">ō</div><div class="bubble">${html}</div>`;
+  win.appendChild(wrap);
+  scrollDown();
+}
+
+function addUserMsg(label) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg user';
+  wrap.innerHTML = `<div class="bubble">${label}</div><div class="avatar">✿</div>`;
+  win.appendChild(wrap);
+  scrollDown();
+}
+
+function addOptions(opts) {
+  const row = document.createElement('div');
+  row.className = 'options-row';
+  opts.forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = o.label;
+    btn.addEventListener('click', () => {
+      disableAllOptions();
+      onPick(o.label, o.val);
+    });
+    row.appendChild(btn);
+  });
+  win.appendChild(row);
+  scrollDown();
+}
+
+function showTyping(cb) {
+  const wrap = document.createElement('div');
+  wrap.className = 'typing-wrap';
+  wrap.id = 'typingIndicator';
+  wrap.innerHTML = `<div class="avatar">ō</div><div class="typing-bubble"><span></span><span></span><span></span></div>`;
+  win.appendChild(wrap);
+  scrollDown();
+  setTimeout(() => {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+    cb();
+  }, 750);
+}
+
+/* ── LOGIC ── */
+function onPick(label, val) {
+  addUserMsg(label);
+  state[STEPS[step].key] = val;
+  step++;
+  showTyping(() => {
+    if (step < STEPS.length) {
+      addBotMsg(STEPS[step].q);
+      addOptions(STEPS[step].opts);
+    } else {
+      revealResult();
+    }
+  });
+}
+
+// Trefle API filtre eşleştirme mantığı
+function getTrefleFilter() {
+  if (state.light === "full") return { type: "light", value: "10" };
+  if (state.light === "bright") return { type: "light", value: "7" };
+  if (state.light === "partial") return { type: "light", value: "5" };
+  return { type: "light", value: "3" };
+}
+
+async function revealResult() {
+  addBotMsg("Perfect — I am searching the global botanical database for your ideal match...");
+  
+  const filter = getTrefleFilter();
+
+  try {
+    // server.js üzerindeki yeni Trefle endpointine istek atıyoruz
+    const response = await fetch('/get-plants', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filterType: filter.type, filterValue: filter.value })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.flowers || result.flowers.length === 0) {
+      throw new Error("No plants found or server error");
+    }
+
+    // Gelen sonuçlardan liste çeşitliliği için rastgele birini seçiyoruz
+    const randomIndex = Math.floor(Math.random() * Math.min(result.flowers.length, 10));
+    const flower = result.flowers[randomIndex];
+
+    // Kartın içine basılacak Trefle verilerini mapliyoruz
+    const flowerData = {
+      icon: "🌿",
+      name: flower.common_name || "Unknown Plant",
+      latin: flower.scientific_name || "Species unknown",
+      desc: `This beautiful specimen belongs to the ${flower.family || 'unknown'} family. It thrives beautifully under the selected conditions and is tracked globally under botanical records.`,
+      light: state.light + " sun",
+      water: state.care === "minimal" ? "Infrequent" : state.care === "frequent" ? "Regularly" : "Moderately",
+      bloom: "Seasonal",
+      diff: state.care === "minimal" ? "Very Easy" : "Moderate",
+      height: "Varies",
+      pet: "Check records"
+    };
+
+    setTimeout(() => {
+      const wrap = document.createElement('div');
+      wrap.className = 'msg bot';
+      wrap.style.alignItems = 'flex-start';
+
+      const av = document.createElement('div');
+      av.className = 'avatar';
+      av.textContent = 'ō';
+
+      const bub = document.createElement('div');
+      bub.className = 'bubble';
+      bub.style.maxWidth = '92%';
+      bub.style.padding = '0';
+      bub.style.background = 'transparent';
+      bub.style.border = 'none';
+
+      bub.innerHTML = `
+        <div class="result-card">
+          <div class="rc-header">
+            <div class="rc-icon">${flowerData.icon}</div>
+            <div>
+              <div class="rc-name">${flowerData.name}</div>
+              <div class="rc-latin">${flowerData.latin}</div>
+            </div>
+          </div>
+          <div class="rc-body">
+            <p class="rc-desc">${flowerData.desc}</p>
+            <div class="rc-traits">
+              <div class="trait"><div class="trait-l">Light</div><div class="trait-v">${flowerData.light}</div></div>
+              <div class="trait"><div class="trait-l">Water</div><div class="trait-v">${flowerData.water}</div></div>
+              <div class="trait"><div class="trait-l">Family</div><div class="trait-v">${flower.family || 'N/A'}</div></div>
+              <div class="trait"><div class="trait-l">Difficulty</div><div class="trait-v">${flowerData.diff}</div></div>
+              <div class="trait"><div class="trait-l">Status</div><div class="trait-v">${flower.status || 'Active'}</div></div>
+              <div class="trait"><div class="trait-l">Bibliography</div><div class="trait-v">Trefle API</div></div>
+            </div>
+            <div class="tips-title">Botanical Notes</div>
+            <div class="tip"><div class="tip-icon">📖</div><span>This plant data was loaded directly from open-source global herbars.</span></div>
+            <div class="tip"><div class="tip-icon">🔍</div><span>Scientific Author: ${flower.author || 'Data protected'}</span></div>
+            <button class="restart-btn" id="restartBtn">← Try different conditions</button>
+          </div>
+        </div>
+      `;
+
+      wrap.appendChild(av);
+      wrap.appendChild(bub);
+      win.appendChild(wrap);
+      scrollDown();
+
+      document.getElementById('restartBtn').addEventListener('click', restart);
+    }, 200);
+
+  } catch (error) {
+    console.error(error);
+    addBotMsg("Sorry, I had trouble reaching the botanical database. Please try again later.");
+  }
+}
+
+function restart() {
+  state = {}; step = 0;
+  win.innerHTML = '';
+  showTyping(() => {
+    addBotMsg(STEPS[0].q);
+    addOptions(STEPS[0].opts);
+  });
+}
+
+/* ── INIT ── */
+addBotMsg(STEPS[0].q);
+addOptions(STEPS[0].opts);
+</script>
+
+</body>
+</html>
