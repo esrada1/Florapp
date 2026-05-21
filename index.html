@@ -496,7 +496,6 @@ async function revealResult() {
   const filter = getTrefleFilter();
 
   try {
-    // server.js üzerindeki yeni Trefle endpointine istek atıyoruz
     const response = await fetch('/get-plants', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -509,28 +508,24 @@ async function revealResult() {
       throw new Error("No plants found or server error");
     }
 
-    // Gelen sonuçlardan liste çeşitliliği için rastgele birini seçiyoruz
     const randomIndex = Math.floor(Math.random() * Math.min(result.flowers.length, 10));
     const flower = result.flowers[randomIndex];
 
-    // Kartın içine basılacak Trefle verilerini mapliyoruz
-    const flowerData = {
-      icon: "🌿",
-      name: flower.common_name || "Unknown Plant",
-      latin: flower.scientific_name || "Species unknown",
-      desc: `This beautiful specimen belongs to the ${flower.family || 'unknown'} family. It thrives beautifully under the selected conditions and is tracked globally under botanical records.`,
-      light: state.light + " sun",
-      water: state.care === "minimal" ? "Infrequent" : state.care === "frequent" ? "Regularly" : "Moderately",
-      bloom: "Seasonal",
-      diff: state.care === "minimal" ? "Very Easy" : "Moderate",
-      height: "Varies",
-      pet: "Check records"
-    };
+    const hasImage = flower.image_url && flower.image_url !== "";
+    
+    const imageBannerHtml = hasImage 
+      ? `<div style="width: 100%; height: 480px; overflow: hidden; margin: 0 0 24px 0;">
+           <img src="${flower.image_url}" alt="${flower.common_name}" style="width: 100%; height: 100%; object-fit: cover;">
+         </div>`
+      : `<div style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; background: var(--cream); margin: 0 0 24px 0; font-size: 64px;">
+           🌿
+         </div>`;
 
     setTimeout(() => {
       const wrap = document.createElement('div');
       wrap.className = 'msg bot';
       wrap.style.alignItems = 'flex-start';
+      wrap.style.width = '100%';
 
       const av = document.createElement('div');
       av.className = 'avatar';
@@ -538,36 +533,44 @@ async function revealResult() {
 
       const bub = document.createElement('div');
       bub.className = 'bubble';
-      bub.style.maxWidth = '92%';
+      bub.style.maxWidth = '100%';
+      bub.style.width = '100%';
       bub.style.padding = '0';
       bub.style.background = 'transparent';
       bub.style.border = 'none';
 
       bub.innerHTML = `
-        <div class="result-card">
-          <div class="rc-header">
-            <div class="rc-icon">${flowerData.icon}</div>
-            <div>
-              <div class="rc-name">${flowerData.name}</div>
-              <div class="rc-latin">${flowerData.latin}</div>
+        
+            
+            <div class="rc-body" style="padding: 0;">
+              <p class="rc-desc" style="text-align: center; margin-bottom: 24px; font-size: 14px; line-height: 1.8; color: var(--bark); font-weight: 300;">
+                This beautiful specimen belongs to the ${flower.family || 'unknown'} family. It thrives beautifully under the selected conditions and is tracked globally under botanical records.
+              </p>
+              
+              <div class="rc-traits">
+                <div class="trait"><div class="trait-l">Light</div><div class="trait-v">${state.light} sun</div></div>
+                <div class="trait"><div class="trait-l">Water</div><div class="trait-v">${state.care === "minimal" ? "Infrequent" : state.care === "frequent" ? "Regularly" : "Moderately"}</div></div>
+                <div class="trait"><div class="trait-l">Family</div><div class="trait-v">${flower.family || 'N/A'}</div></div>
+              </div>
+              <div class="result-card" style="padding: 0; overflow: hidden; width: 100%; border-radius: 20px;">
+          
+          ${imageBannerHtml}
+          
+          <div style="padding: 0 24px 24px 24px;">
+            
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div class="rc-name" style="font-size: 28px; font-weight: 500; color: var(--bark); font-family: 'Playfair Display', serif;">${flower.common_name || "Unknown Plant"}</div>
+              <div class="rc-latin" style="font-size: 15px; font-style: italic; margin-top: 6px; color: var(--bark-light); font-family: 'Playfair Display', serif;">${flower.scientific_name || "Species unknown"}</div>
             </div>
-          </div>
-          <div class="rc-body">
-            <p class="rc-desc">${flowerData.desc}</p>
-            <div class="rc-traits">
-              <div class="trait"><div class="trait-l">Light</div><div class="trait-v">${flowerData.light}</div></div>
-              <div class="trait"><div class="trait-l">Water</div><div class="trait-v">${flowerData.water}</div></div>
-              <div class="trait"><div class="trait-l">Family</div><div class="trait-v">${flower.family || 'N/A'}</div></div>
-              <div class="trait"><div class="trait-l">Difficulty</div><div class="trait-v">${flowerData.diff}</div></div>
-              <div class="trait"><div class="trait-l">Status</div><div class="trait-v">${flower.status || 'Active'}</div></div>
-              <div class="trait"><div class="trait-l">Bibliography</div><div class="trait-v">Trefle API</div></div>
-            </div>
-            <div class="tips-title">Botanical Notes</div>
-            <div class="tip"><div class="tip-icon">📖</div><span>This plant data was loaded directly from open-source global herbars.</span></div>
-            <div class="tip"><div class="tip-icon">🔍</div><span>Scientific Author: ${flower.author || 'Data protected'}</span></div>
-            <button class="restart-btn" id="restartBtn">← Try different conditions</button>
+            
           </div>
         </div>
+             
+              <button class="restart-btn" id="restartBtn" style="margin-top: 24px; position: relative; z-index: 999;">← Try different conditions</button>
+            </div>
+            
+        
+        
       `;
 
       wrap.appendChild(av);
@@ -575,6 +578,7 @@ async function revealResult() {
       win.appendChild(wrap);
       scrollDown();
 
+      // Etiketler düzeldiği için artık element sorunsuz bulunacak ve tıklandığında çalışacak
       document.getElementById('restartBtn').addEventListener('click', restart);
     }, 200);
 
@@ -584,16 +588,16 @@ async function revealResult() {
   }
 }
 
+/* ── INIT ── */
 function restart() {
-  state = {}; step = 0;
-  win.innerHTML = '';
+  state = {}; 
+  step = 0;
+  win.innerHTML = ''; // Sohbet penceresini temizler
   showTyping(() => {
-    addBotMsg(STEPS[0].q);
-    addOptions(STEPS[0].opts);
+    addBotMsg(STEPS[0].q); // İlk soruyu tekrar sorar
+    addOptions(STEPS[0].opts); // İlk seçenekleri getirir
   });
 }
-
-/* ── INIT ── */
 addBotMsg(STEPS[0].q);
 addOptions(STEPS[0].opts);
 </script>
